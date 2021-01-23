@@ -1,0 +1,25 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t saisunil183/multicontainer-cicd -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true saisunil183/multicontainer-cicd npm run test -- --coverage
+
+after_success:
+#Building all the seperate containers for multi container architecture
+  - docker build -t saisunil183/multicontainer-client ./client
+  - docker build -t saisunil183/multicontainer-nginx ./nginx
+  - docker build -t saisunil183/multicontainer-server ./server
+  - docker build -t saisunil183/multicontainer-worker ./worker
+
+#Log in to the docker cli
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER_NAME" --password-stdin
+
+#Pushing images to docker hub
+  - docker push saisunil183/multicontainer-client
+  - docker push saisunil183/multicontainer-nginx
+  - docker push saisunil183/multicontainer-server
+  - docker push saisunil183/multicontainer-worker
